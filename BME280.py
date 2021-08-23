@@ -98,7 +98,7 @@ class BME280:
                 h_comp = h1
 
         # Return all compensated as a tuple
-        return "{:.2f}".format(round(t_comp, 2)), "{:.2f}".format(round(p_comp, 2)), "{:.2f}".format(round(h_comp, 2))
+        return round(t_comp, 2), round(p_comp, 2), round(h_comp, 2)
 
     # Get all T, P & H measurements
     def get_raw(self):

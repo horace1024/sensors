@@ -48,6 +48,6 @@ class MCP9808:
         else:
             ctemp = bt * 0.0625
         # Round and format
-        return "{:.2f}".format(round(ctemp, 2))
+        return round(ctemp, 2)
 
 

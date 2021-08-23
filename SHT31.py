@@ -46,7 +46,7 @@ class SHT31:
         rh = 100*(relh/float((2**16)-1))
         
         # Return both values temp, humidity
-        return "{:.2f}".format(round(tc, 2)), "{:.2f}".format(round(rh, 2))
+        return round(tc, 2), round(rh, 2)
 
 
     # Enable the onboard heater

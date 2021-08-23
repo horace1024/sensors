@@ -5,9 +5,14 @@ import time
 
 # Create a virtual BME280 Temp, Pressure, Humidity sensor
 class BME280:
-    def __init__(self, bus, addr):
+    def __init__(self, bus, addr, cal_t=0.0, cal_h=0.0, cal_p=0.0):
         self.addr = addr
         self.bus = SMBus(bus)
+
+        # Linear calibration values (+/- float)
+        self.cal_t = cal_t
+        self.cal_h = cal_h
+        self.cal_p = cal_p
 
         # Sample mode
         self.mode = 0x3
@@ -97,8 +102,8 @@ class BME280:
             else:
                 h_comp = h1
 
-        # Return all compensated as a tuple
-        return round(t_comp, 2), round(p_comp, 2), round(h_comp, 2)
+        # Apply calibration and return all compensated as a tuple
+        return round((t_comp + self.cal_t), 2), round((p_comp + self.cal_p), 2), round((h_comp + self.cal_h), 2)
 
     # Get all T, P & H measurements
     def get_raw(self):

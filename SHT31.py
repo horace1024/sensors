@@ -3,11 +3,14 @@ from smbus2 import SMBus
 import time
 from datetime import datetime
 
-# Create a virtual SHT31 Humidity and Temperature ensor
+
+# Create a virtual SHT31 Humidity and Temperature sensor
 class SHT31:
-    def __init__(self, bus, addr, crc=False):
+    def __init__(self, bus, addr, crc=False, cal_t=0.0, cal_h=0.0):
         self.addr = addr
         self.crc = crc
+        self.cal_t = cal_t
+        self.cal_h = cal_h
         self.bus = SMBus(bus)
         self.init()
 
@@ -25,7 +28,7 @@ class SHT31:
     def rht_read(self):
         # Send command for single shot measurement
         self.bus.write_i2c_block_data(self.addr, 0x2C, [0x06])
-        # Read temp, rh and crc
+        # Read temp, rh and crc
         data = self.bus.read_i2c_block_data(self.addr, 0x00, 6)
 
         # Parse received bytes
@@ -35,19 +38,18 @@ class SHT31:
         hcrc = (data[5] & 0xFF)
 
         # Check CRC for Temp and RH
-        if(self.crc):
-            if(self.crc_check([data[0], data[1]]) != tcrc):
+        if self.crc:
+            if self.crc_check([data[0], data[1]]) != tcrc:
                 print("SHT31 CRC Error - Temperature %s" % datetime.now())
-            if(self.crc_check([data[3], data[4]]) != hcrc):
+            if self.crc_check([data[3], data[4]]) != hcrc:
                 print("SHT31 CRC Error - Humidity %s" % datetime.now())
 
         # Compute real values
         tc = -45+(175*(temp/float((2**16)-1)))
         rh = 100*(relh/float((2**16)-1))
         
-        # Return both values temp, humidity
-        return round(tc, 2), round(rh, 2)
-
+        # Apply linear calibration, return both values temp & humidity
+        return round((tc + self.cal_t), 2), round((rh + self.cal_h), 2)
 
     # Enable the onboard heater
     def heater_on(self):
@@ -57,7 +59,7 @@ class SHT31:
     def heater_off(self):
         self.bus.write_i2c_block_data(self.addr, 0x30, [0x66])
 
-    # Print status register
+    # Print status register
     def print_status(self):
         # Read register
         self.bus.write_i2c_block_data(self.addr, 0xF3, [0x2D])
@@ -68,8 +70,8 @@ class SHT31:
         scrc = (data[2] & 0xFF)
 
         # Check CRC
-        if(self.crc):
-            if(self.crc_check([data[0], data[1]]) != scrc):
+        if self.crc:
+            if self.crc_check([data[0], data[1]]) != scrc:
                 print("SHT31 CRC Error - Status check %s" % datetime.now())
 
         # Parse
@@ -89,7 +91,6 @@ class SHT31:
         print("System reset detected      : 0x%01X" % sys_reset)
         print("Command status             : 0x%01X" % command_status)
         print("Write data checksum status : 0x%01X" % write_checksum)
-
 
     # Compute the CRC for two byte data
     def crc_check(self, data):
